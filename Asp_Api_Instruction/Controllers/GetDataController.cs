@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Asp_Api_Instruction.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json.Linq;
@@ -48,7 +49,6 @@ namespace Asp_Api_Instruction.Controllers
                 }
             }
         }
-
 
         [HttpGet("GetDataFromDB")] // атрибут для маршрутизации HTTP GET-запроса по адресу "api/GetDataFromDB"
         public ActionResult<List<string>> GetDataFromDB()
@@ -117,7 +117,6 @@ namespace Asp_Api_Instruction.Controllers
                 return BadRequest($"Ошибка при создании таблицы: {ex.Message}");
             }
         }
-
 
         [HttpGet("GetRates")]
         public ActionResult<string> GetRates()
@@ -218,5 +217,75 @@ namespace Asp_Api_Instruction.Controllers
             return Ok();
         }
 
+        [HttpPost("AddUserWithData")]
+        public ActionResult<string> AddUserWithData()
+        {
+            string connectionString = "Server=(localdb)\\mssqllocaldb;Database=TestC#Database;Trusted_Connection=True;";
+            // Создаем объект UserModel и заполняем его данными пользователя
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                UserModel userModel = new UserModel
+                {
+                    FirstName = "Erik",
+                    LastName = "Иванов",
+                    Age = 30,
+                    Email = "ivanov@mail.com",
+                    PhoneNumber = ""
+                };
+                string sql = "INSERT INTO MyUsersTable (FirstName, LastName, Age, Email, PhoneNumber) " +
+                             "VALUES (@FirstName, @LastName, @Age, @Email, @PhoneNumber);";
+
+                using (SqlCommand command = new SqlCommand(sql, connection))
+                {
+                    if (userModel.FirstName == "Erik")
+                    {
+                        userModel.FirstName = "BOOOOOM";
+                    }
+
+                    command.Parameters.AddWithValue("@FirstName", userModel.FirstName);
+                    command.Parameters.AddWithValue("@LastName", userModel.LastName);
+                    command.Parameters.AddWithValue("@Age", userModel.Age);
+                    command.Parameters.AddWithValue("@Email", userModel.Email);
+                    command.Parameters.AddWithValue("@PhoneNumber", string.IsNullOrEmpty(userModel.PhoneNumber) ? (object)DBNull.Value : userModel.PhoneNumber);
+                    try
+                    {
+                        connection.Open();
+                        int rowsAffected = command.ExecuteNonQuery();
+                        return $"User added successfully! Rows affected: {rowsAffected}";
+                    }
+                    catch (Exception ex)
+                    {
+                        return $"Error adding user: {ex.Message}";
+                    }
+                }
+            }
+            return Ok();
+        }
+
+
+        [HttpGet("CheckDBConnection2")] // атрибут для маршрутизации HTTP GET-запроса по адресу "api/CheckDBConnection"
+        public ActionResult<string> CheckDBConnection2()
+        {
+            // строка подключения к базе данных
+            string connectionString = "Server=(localdb)\\mssqllocaldb;Database=TestC#Database;Trusted_Connection=True;";
+
+            // объявление объекта SqlConnection в блоке using для автоматического закрытия подключения
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                try
+                {
+                    // открытие подключения к базе данных
+                    connection.Open();
+
+                    // если подключение успешно, возвращается строка "Connection successful!"
+                    return "Connection successful!";
+                }
+                catch (Exception ex)
+                {
+                    // если произошла ошибка, возвращается строка "Connection failed: " с сообщением об ошибке
+                    return $"Connection failed: {ex.Message}";
+                }
+            }
+        }
     }
 }
