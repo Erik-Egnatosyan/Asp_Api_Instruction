@@ -217,49 +217,59 @@ namespace Asp_Api_Instruction.Controllers
             return Ok();
         }
 
-        [HttpPost("AddUserWithData")]
+        [HttpPost("AddUserWithDataNoApi")]
         public ActionResult<string> AddUserWithData()
         {
             string connectionString = "Server=(localdb)\\mssqllocaldb;Database=TestC#Database;Trusted_Connection=True;";
             // Создаем объект UserModel и заполняем его данными пользователя
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                UserModel userModel = new UserModel
-                {
-                    FirstName = "Erik",
-                    LastName = "Иванов",
-                    Age = 30,
-                    Email = "ivanov@mail.com",
-                    PhoneNumber = ""
-                };
+                UserModel userModel = CreateUserModel("Erik", "Иванов", 30, "ivanov@mail.com");
+                //UserModel userModel = CreateUserModel("Erik", "Иванов", 30, "ivanov@mail.com","");
                 string sql = "INSERT INTO MyUsersTable (FirstName, LastName, Age, Email, PhoneNumber) " +
                              "VALUES (@FirstName, @LastName, @Age, @Email, @PhoneNumber);";
 
                 using (SqlCommand command = new SqlCommand(sql, connection))
                 {
-                    if (userModel.FirstName == "Erik")
-                    {
-                        userModel.FirstName = "BOOOOOM";
-                    }
 
-                    command.Parameters.AddWithValue("@FirstName", userModel.FirstName);
-                    command.Parameters.AddWithValue("@LastName", userModel.LastName);
-                    command.Parameters.AddWithValue("@Age", userModel.Age);
-                    command.Parameters.AddWithValue("@Email", userModel.Email);
-                    command.Parameters.AddWithValue("@PhoneNumber", string.IsNullOrEmpty(userModel.PhoneNumber) ? (object)DBNull.Value : userModel.PhoneNumber);
+                    command.Parameters.AddWithValue(nameof(userModel.FirstName), userModel.FirstName);
+                    command.Parameters.AddWithValue(nameof(userModel.LastName), userModel.LastName);
+                    command.Parameters.AddWithValue(nameof(userModel.Age), userModel.Age);
+                    command.Parameters.AddWithValue(nameof(userModel.Email), userModel.Email);
+                    command.Parameters.AddWithValue(nameof(userModel.PhoneNumber), string.IsNullOrEmpty(userModel.PhoneNumber) ? (object)DBNull.Value : userModel.PhoneNumber);
                     try
                     {
                         connection.Open();
                         int rowsAffected = command.ExecuteNonQuery();
                         return $"User added successfully! Rows affected: {rowsAffected}";
                     }
-                    catch (Exception ex)
+                    catch (SqlException ex)
+                    {
+                        return $"Error adding user: {ex.Message}";
+                    }
+                    catch (Exception ex) when (ex is SqlException)
                     {
                         return $"Error adding user: {ex.Message}";
                     }
                 }
             }
-            return Ok();
+        }
+
+        public UserModel CreateUserModel(string firstName, string lastName, byte age, string email, string phoneNumber = null)
+        {
+            if (string.IsNullOrEmpty(phoneNumber))
+            {
+                phoneNumber = null;
+            }
+
+            return new UserModel
+            {
+                FirstName = firstName,
+                LastName = lastName,
+                Age = age,
+                Email = email,
+                PhoneNumber = phoneNumber
+            };
         }
 
 
