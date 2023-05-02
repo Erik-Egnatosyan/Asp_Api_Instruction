@@ -255,7 +255,7 @@ namespace Asp_Api_Instruction.Controllers
             }
         }
 
-        public UserModel CreateUserModel(string firstName, string lastName, byte age, string email, string phoneNumber = null)
+        public static UserModel CreateUserModel(string firstName, string lastName, byte age, string email, string phoneNumber = null)
         {
             if (string.IsNullOrEmpty(phoneNumber))
             {
